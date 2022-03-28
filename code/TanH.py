@@ -27,4 +27,3 @@ class Tanh(Module):
     def backward_delta(self, input, delta):
         """Calcul la derivee de l'erreur"""
         return ( 1 - np.tanh(input)**2 ) * delta
-        

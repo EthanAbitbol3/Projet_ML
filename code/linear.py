@@ -4,14 +4,16 @@ from  projet_etu import Module
 class Linear(Module):
     """Implementation du module Lineaire """
     def __init__(self,input,output):
-        self.input = input
-        self.output = output
-        self._parameters = np.random.rand(self.input, self.output) # Les poids w
-        self.zero_grad()
+        self.input = input # pas demande mais ok
+        self.output = output # pas demande mais ok (c'est bien y_pred ?)
+        self._parameters = np.random.rand(self.input, self.output) # self.output ? ta pas voulu mettre plutot self.input.shape[0],self.input.shape[1] ?
+        self.zero_grad() # ok
+        # je pense qu'il faut ajouter une variable du module d'avant si il y en a un pour retropropager l'erreur
+        # genre self.module = module
 
     def zero_grad(self):
         """Annule gradient"""
-        self._gradient = np.zeros((self.input, self.output))
+        self._gradient = np.zeros((self.input, self.output)) # meme remarque que ligne 9 sinon ok
 
     def forward(self, X):
         """Calcule la passe forward, calcul des sorties en fonctions des entrees X"""
@@ -19,12 +21,12 @@ class Linear(Module):
 
     def update_parameters(self, gradient_step=1e-3):
         """Calcule la mise a jour des parametres selon le gradient calcule et le pas de gradient_step"""
-        self._parameters -= gradient_step*self._gradient
+        self._parameters -= gradient_step*self._gradient # c'est pas w = w + eps * grad normalement ? (eviter -= aussi) sinon ok
 
     def backward_update_gradient(self, input, delta):
         """Met a jour la valeur du gradient"""
-        self._gradient = self._gradient + np.dot( input.T, delta )
+        self._gradient = self._gradient + np.dot( input.T, delta ) 
 
     def backward_delta(self, input, delta):
         """Calcul la derivee de l'erreur"""
-        return np.dot( delta, self._parameters.T )
+        return np.dot( delta, self._parameters.T ) # input pas utilise
