@@ -8,9 +8,7 @@ class Linear(Module):
         self.output = output # pas demande mais ok (c'est bien y_pred ?)
         self._parameters = np.random.rand(self.input, self.output) # self.output ? ta pas voulu mettre plutot self.input.shape[0],self.input.shape[1] ?
         self.zero_grad() # ok
-        # je pense qu'il faut ajouter une variable du module d'avant si il y en a un pour retropropager l'erreur
-        # genre self.module = module
-
+        
     def zero_grad(self):
         """Annule gradient"""
         self._gradient = np.zeros((self.input, self.output)) # meme remarque que ligne 9 sinon ok
