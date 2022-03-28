@@ -1,8 +1,8 @@
 """
 Classe ABSTRAITE Module qui représente un module générique du réseau de neurones.
-
-
 """
+
+
 import numpy as np
 
 class Loss(object):
