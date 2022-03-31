@@ -7,6 +7,5 @@ class MSELoss(Loss):
         return np.linalg.norm( y -yhat, axis=1) ** 2
 
     def backward(self, y, yhat):
-        # print("y shape: ",y.shape,"yhat shape : ",yhat.shape)
         return -2 * (y-yhat)
 
