@@ -23,12 +23,8 @@ class Linear(Module):
 
     def backward_update_gradient(self, input, delta):
         """Met a jour la valeur du gradient"""
-        print("backward_update_gradient")
-        print("taille input:",input.shape," taille delta:",delta.shape)
         self._gradient = self._gradient + np.dot( input.T, delta ) 
 
     def backward_delta(self, input, delta):
         """Calcul la derivee de l'erreur"""
-        print("backward_delta")
-        print("delta shape:",delta.shape,"input shape:",input.shape,"parameter",self._parameters.shape)
         return np.dot(delta,self._parameters.T) 
