@@ -1,3 +1,12 @@
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+################################# ABITBOL YOSSEF ET DUFOURMANTELLE JEREMY ################################
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+
+# iMPORT 
 from linear import Linear
 from MSELoss import MSELoss
 from TanH import Tanh
@@ -6,9 +15,8 @@ import Sequentiel,Optim
 from sklearn.datasets import make_blobs,make_moons,make_regression
 from matplotlib import pyplot as plt
 import numpy as np 
-import pandas as pd 
 from mltools import plot_data, plot_frontiere, make_grid, gen_arti
-
+from sklearn.preprocessing import StandardScaler
 
 ##########################################################################################################
 ##########################################################################################################
@@ -81,153 +89,100 @@ def affichage(X,y,modele,train_loss):
 
 # TEST PARTIE 2: NON LINEAIRE MODULE
 
-def neural_network_non_lineaire(X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
+class neural_network_non_lineaire:
+    def __init__(self, list_error):
+        self.list_error = list_error
 
-    if biais == True:
-        bias = np.ones((len(X), 1))
-        X = np.hstack((bias, X))
+    def fit(self,X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
+        if biais == True:
+            bias = np.ones((len(X), 1))
+            X = np.hstack((bias, X))
 
-    # Initialisation des modules
-    mse = MSELoss()
-    linear_1 = Linear(X.shape[1], nombre_neurone)
-    tanh = Tanh()
-    linear_2 = Linear(nombre_neurone, X.shape[1])
-    sigmoide = Sigmoide()
+        # Initialisation des modules
+        self.mse = MSELoss()
+        self.linear_1 = Linear(X.shape[1], nombre_neurone)
+        self.tanh = Tanh()
+        self.linear_2 = Linear(nombre_neurone, y.shape[1])
+        self.sigmoide = Sigmoide()
 
-    list_errors = []
+        self.list_errors = []
 
-    for _ in range(n_iter):
+        for _ in range(n_iter):
+            
+            # phase forward
+            res1 = self.linear_1.forward(X)
+            res2 = self.tanh.forward(res1)
+            res3 = self.linear_2.forward(res2)
+            res4 = self.sigmoide.forward(res3)
+
+            self.list_errors.append(np.mean(self.mse.forward(y, res4))) # loss
+
+            #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
+            last_delta = self.mse.backward(y, res4)
+
+            delta_sig = self.sigmoide.backward_delta(res3, last_delta)
+            delta_lin = self.linear_2.backward_delta(res2, delta_sig)
+            delta_tan = self.tanh.backward_delta(res1, delta_lin)
+
+            self.linear_1.backward_update_gradient(X, delta_tan)
+            self.linear_2.backward_update_gradient(res2, delta_sig)
+
+            # mise a jour  de la matrice de poids
+            self.linear_1.update_parameters(learning_rate)
+            self.linear_2.update_parameters(learning_rate)
+
+            self.linear_1.zero_grad()
+            self.linear_2.zero_grad()
+
+    def predict(self,xtest,biais = True):
+        if biais == True:
+            bias = np.ones((len(xtest), 1))
+            xtest = np.hstack((bias, xtest))
         
-        # phase forward
-        res1 = linear_1.forward(X)
-        res2 = tanh.forward(res1)
-        res3 = linear_2.forward(res2)
-        res4 = sigmoide.forward(res3)
+        res1 = self.linear_1.forward(xtest)
+        res2 = self.tanh.forward(res1)
+        res3 = self.linear_2.forward(res2)
+        res4 = self.sigmoide.forward(res3)
 
-        list_errors.append(np.mean(mse.forward(y, res4))) # loss
+        return np.argmax(res4, axis = 1) 
 
-        #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
-        last_delta = mse.backward(y, res4)
-
-        delta_sig = sigmoide.backward_delta(res3, last_delta)
-        delta_lin = linear_2.backward_delta(res2, delta_sig)
-        delta_tan = tanh.backward_delta(res1, delta_lin)
-
-        linear_1.backward_update_gradient(X, delta_tan)
-        linear_2.backward_update_gradient(res2, delta_sig)
-
-        # mise a jour  de la matrice de poids
-        linear_1.update_parameters(learning_rate)
-        linear_2.update_parameters(learning_rate)
-
-        linear_1.zero_grad()
-        linear_2.zero_grad()
-
-    return list_errors,linear_1,linear_2, res4
 
 # generations de points 
-X, y = gen_arti(data_type=1)
-nombre_neurone = 2
-_,_,_, res = neural_network_non_lineaire(X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True)
-def f(res):
-    return  np.argmax(res, axis = 1)
+X, y = gen_arti(data_type=1, epsilon=0.01) # 4 gaussiennes
+
+# preprocessing
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+# classification sur 0 et 1
+y = np.array([ 0 if d == -1 else 1 for d in y ])
+onehot = np.zeros((y.size, 2))
+onehot[np.arange(y.size), y ] = 1
+y = onehot
+
+nombre_neurone = 5
+neural_network_non_lineaire = neural_network_non_lineaire([])
+neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.01)
+y = np.argmax(y,axis=1)
+
+# affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
-plot_frontiere(X,f,step=100)
+plot_frontiere(X,lambda x : neural_network_non_lineaire.predict(x),step=100)
 plot_data(X,y.reshape(1,-1)[0])
 plt.title(f"neural network non lineaire avec {nombre_neurone} neurones")
 plt.show()
 
+# affichage de la courbe d'errreur
+plt.figure()
+plt.title('erreur en fonction de literation')
+plt.plot(neural_network_non_lineaire.list_errors, label='loss')
+plt.legend()
+plt.xlabel('itérations')
+plt.ylabel('erreur')
+plt.show()
 
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
 
-# X2, y2 = make_moons(n_samples=100, noise=0.2, random_state = 0 )
-# plt.figure(1)
-# df = pd.DataFrame(dict(x=X2[:,0], y=X2[:,1], label=y2))
-# colors = {0:'red', 1:'blue'}
-# fig, ax = plt.subplots()
-# grouped = df.groupby('label')
-# for key, group in grouped:
-#     group.plot(ax=ax, kind='scatter', x='x', y='y', label=key, color=colors[key])
-# plt.show()
-
-
-# # print("avant ",y2.shape)
-# y2 = y2.reshape((-1,1))
-# # print("apres ",y2.shape)
-
-# ll = []
-# ll.append(neural_network_non_lineaire(X2, y2, 2))
-# ll.append(neural_network_non_lineaire(X2, y2, 3))
-# ll.append(neural_network_non_lineaire(X2, y2, 20))
-
-# for i in range(len(ll)):
-#     title = "erreur du réseau"
-#     plt.figure(i)
-#     plt.plot(np.arange(len(ll[i][0])),ll[i][0])
-#     plt.title(title)
-#     plt.show()
-
-# plt.figure(5)
-# for key, group in grouped:
-#     group.plot(ax=ax, kind='scatter', x='x', y='y', label=key, color=colors[key])
-# plt.plot(X2[:,0],X2[:,0] *ll[0][1]._parameters[0][0])
-# plt.show()
-
-# datax, datay = gen_arti(data_type = 1 , epsilon = 0.01)
-# datay = np.array([ 0 if d == -1 else 1 for d in datay ])
-# datay = datay.reshape((-1,1))
-
-# grid, x_grid, y_grid = make_grid(xmin=-2, xmax=2, ymin=-2, ymax=2, step=1000)
-# list_errors,linear_1,linear_2 = neural_network_non_lineaire(datax, datay, 2, n_iter=1000)
-
-# datay = np.argmax(datay, axis=1)
-# linear_3 = Linear(datax.shape[1], 2)
-# tanh_3 = Tanh()
-# linear_4 = Linear(2, datay.shape[1])
-# sigmoide_4 = Sigmoide()
-
-# def add_bias(datax):
-#     """ Fonction permettant d'ajouter un biais aux données.
-#         @param xtrain: float array x array, données auxquelle ajouter un biais
-#     """
-#     bias = np.ones((len(datax), 1))
-#     return np.hstack((bias, datax))
-
-# def predict(x):
-#     x = add_bias (x)
-#     res = linear_3.forward(datax)
-#     res = tanh_3.forward(res)
-#     res = linear_4.forward(res)
-#     res = sigmoide_4.forward(res)
-#     return np.argmax(res, axis = 1)
-
-# frontiere de decision
-# plt.figure()
-# plt.title('frontiére de décision de bruit ')
-# plot_frontiere(datax,lambda x : np.sign(x.dot(linear_2._parameters)),step = 100)
-# plot_data(datax,datay)
-# plt.show()
-
-# courbe d'erreur 
-# plt.figure()
-# plt.plot(np.arange(len(list_errors)),list_errors)
-# plt.show()
-
-## Visualisation de la fonction de coût en 2D
-# plt.figure()
-# plt.title('Visualisation de la fonction de coût en 2D')
-# plt.contourf(x_grid,y_grid,np.array([mse(w,datax,datay).mean() for w in grid]).reshape(x_grid.shape),levels=20)
-# plt.scatter( [w[0] for w in list_w] , [w[1] for w in list_w], c='cyan', marker='*')
-
-# X , y = gen_arti(data_type=1)
-# list_errors,linear_1,linear_2,res4 = neural_network_non_lineaire(X, y, 2, n_iter=1000,learning_rate=0.01)
-
-# def f(X):
-    # _ , y = gen_arti(data_type=1)
-    # # y = y.reshape((1,y.shape[0]))
-    # _,_,_,res4 = neural_network_non_lineaire(X, y.T, 2, n_iter=1000,learning_rate=0.01)
-    # return np.where(X<0.5, 0, 1)
-
-# plt.figure()
-# plot_data(X,y)
-# plot_frontiere(X,f)
-# plt.show()
+# TEST PARTIE 3: 
