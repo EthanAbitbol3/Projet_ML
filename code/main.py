@@ -12,7 +12,7 @@ from MSELoss import MSELoss
 from TanH import Tanh
 from Sigmoide import Sigmoide
 from Sequentiel import Sequentiel
-import Optim
+from Optim import Optim, SGD
 from sklearn.datasets import make_blobs,make_moons,make_regression
 from matplotlib import pyplot as plt
 import numpy as np 
@@ -187,8 +187,66 @@ plt.show()
 ##########################################################################################################
 ##########################################################################################################
 
-# TEST PARTIE 3: Mon troisième est un encapsulage
+# TEST PARTIE 3: Mon troisième est un encapsulage : SEQUENTIEL
+"""
+# generations de points 
+X2, y2 = gen_arti(data_type=1, epsilon=0.01) # 4 gaussiennes
 
+# preprocessing
+scaler = StandardScaler()
+X2 = scaler.fit_transform(X2)
+
+# classification sur 0 et 1
+y2 = np.array([ 0 if d == -1 else 1 for d in y2 ])
+onehot = np.zeros((y2.size, 2))
+onehot[np.arange(y2.size), y2 ] = 1
+y2 = onehot
+
+###### FIT 
+nombre_neurone = 12
+
+mse = MSELoss()
+linear_1 = Linear(X2.shape[1], nombre_neurone)
+tanh = Tanh()
+linear_2 = Linear(nombre_neurone, y2.shape[1])
+sigmoide = Sigmoide()
+
+modules = [linear_1,tanh,linear_2,sigmoide]
+for _ in range(1000):
+    sequentiel = Sequentiel(modules,mse)
+    sequentiel.fit(X2, y2)
+
+    linear_1.backward_update_gradient(X2, sequentiel.delta[-1])
+    linear_2.backward_update_gradient(sequentiel.res[1], sequentiel.delta[1])
+
+    # mise a jour  de la matrice de poids
+    linear_1.update_parameters(0.001)
+    linear_2.update_parameters(0.001)
+
+    linear_1.zero_grad()
+    linear_2.zero_grad()
+
+y2 = np.argmax(y2,axis=1)
+
+# affichage de la frontiere de decision ainsi que des donnees
+plt.figure()
+plot_frontiere(X2,lambda x : sequentiel.predict(x,biais = False),step=100)
+plot_data(X2,y2.reshape(1,-1)[0])
+plt.title(f"Sequentiel avec {nombre_neurone} neurones")
+plt.show()
+
+# affichage de la courbe d'errreur
+plt.figure()
+plt.title('erreur en fonction de literation')
+plt.plot(np.arange(len(sequentiel.list_error)),sequentiel.list_error, label='loss')
+plt.legend()
+plt.xlabel('itérations')
+plt.ylabel('erreur')
+plt.show()
+"""
+# TEST PARTIE 3 : OPTIM / SGD
+
+"""
 # generations de points 
 X, y = gen_arti(data_type=1, epsilon=0.01) # 4 gaussiennes
 
@@ -203,47 +261,21 @@ onehot[np.arange(y.size), y ] = 1
 y = onehot
 
 nombre_neurone = 5
-
-bias = np.ones((len(X), 1))
-X = np.hstack((bias, X))
-
-# Initialisation des modules
 mse = MSELoss()
 linear_1 = Linear(X.shape[1], nombre_neurone)
 tanh = Tanh()
 linear_2 = Linear(nombre_neurone, y.shape[1])
 sigmoide = Sigmoide()
+net = [linear_1,tanh,linear_2,sigmoide]
 
-for i in range(100):
-    modules = [linear_1,tanh,linear_2,sigmoide]
-    sequentiel = Sequentiel(modules,mse)
-    res, deltas, list_error = sequentiel.fit(X, y)
-    linear_1.backward_update_gradient(X, deltas[-1])
-    linear_2.backward_update_gradient(res[1], deltas[1])
-
-    # mise a jour  de la matrice de poids
-    linear_1.update_parameters(0.001)
-    linear_2.update_parameters(0.001)
-
-    linear_1.zero_grad()
-    linear_2.zero_grad()
+sgd = SGD(net,mse,X,y)
+sgd.fit(taille_batch=len(y))
 
 y = np.argmax(y,axis=1)
 
-def f(X):
-    bias = np.ones((len(X), 1))
-    X = np.hstack((bias, X))
-
-    res1 = linear_1.forward(X)
-    res2 = tanh.forward(res1)
-    res3 = linear_2.forward(res2)
-    res4 = sigmoide.forward(res3)
-
-    return np.argmax(res4, axis = 1)
-
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
-plot_frontiere(X,lambda x : f(x),step=100)
+plot_frontiere(X,lambda x : sgd.predict(x),step=100)
 plot_data(X,y.reshape(1,-1)[0])
 plt.title(f"neural network non lineaire avec {nombre_neurone} neurones")
 plt.show()
@@ -251,8 +283,9 @@ plt.show()
 # affichage de la courbe d'errreur
 plt.figure()
 plt.title('erreur en fonction de literation')
-plt.plot(neural_network_non_lineaire.list_error, label='loss')
+plt.plot(sgd.list_error, label='loss')
 plt.legend()
 plt.xlabel('itérations')
 plt.ylabel('erreur')
 plt.show()
+"""
