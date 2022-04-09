@@ -13,7 +13,7 @@ class Softmax(Module):
     def forward(self, X):
         """Calcule la passe forward"""
         sum_exp = np.sum(np.exp(X), axis=1)
-        return np.exp(X)/sum_exp
+        return np.exp(X)/sum_exp.reshape(-1,1)
 
     def update_parameters(self, gradient_step=1e-3):
         """Calcule la mise a jour des parametres selon le gradient calcule et le pas de gradient_step"""
@@ -25,5 +25,5 @@ class Softmax(Module):
 
     def backward_delta(self, input, delta):
         """Calcul la derivee de l'erreur"""
-        sum_exp = np.sum(np.exp(input), axis=1)
-        return delta * np.multiply(np.exp(input)/sum_exp, 1 - (np.exp(input)/sum_exp))
+        s = self.forward( np.array(input) )
+        return s * ( 1 - s ) * delta
