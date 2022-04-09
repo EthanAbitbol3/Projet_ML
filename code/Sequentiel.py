@@ -5,9 +5,10 @@ DUFOURMANTELLE JEREMY
 """
 
 from sys import modules
-import numpy as np 
+import numpy as np
+from projet_etu import Module 
 
-class Sequentiel():
+class Sequentiel(Module):
     """Implementation de la classe Sequentiel"""
     def __init__(self,modules,loss) -> None:
         self.modules = modules # liste des differents modules

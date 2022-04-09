@@ -91,14 +91,14 @@ def neural_network_lineaire_bis(X_train, y_train, nombre_neurone , n_iter = 100,
     return module2, train_loss
 
 # Génération des points
-nombre_dim_y = 1
+nombre_dim_y = 3
 X, y = make_regression(n_samples=100, n_features=1,bias=0.5,noise=10,n_targets=nombre_dim_y, random_state=0)
 if y.ndim == 1 : 
     y = y.reshape((-1,1))
 print(y.shape)
-modele, train_loss = neural_network_lineaire(X,y,nombre_neurone=1)
-# affichage(X,y,modele,train_loss)
+modele, train_loss = neural_network_lineaire(X,y,nombre_neurone=y.shape[1])
+affichage(X,y,modele,train_loss)
 
-modele2, train_loss2 = neural_network_lineaire_bis(X, y, 5 , n_iter = 100,learning_rate = 0.001)
+modele2, train_loss2 = neural_network_lineaire_bis(X, y, nombre_neurone=y.shape[1] , n_iter = 100,learning_rate = 0.001)
 print(modele2._parameters)
 affichage(X,y,modele2,train_loss2)
