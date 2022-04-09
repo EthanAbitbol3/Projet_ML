@@ -1,5 +1,7 @@
 """
-Classe ABSTRAITE Module qui représente un module générique du réseau de neurones.
+Classe ABSTRAITE Module / Loss qui représente un module générique du réseau de neurones.
+ABITBOL YOSSEF
+DUFOURMANTELLE JEREMY
 """
 
 

@@ -1,3 +1,9 @@
+"""
+Classe ABSTRAITE Linear.
+ABITBOL YOSSEF
+DUFOURMANTELLE JEREMY
+"""
+
 import numpy as np
 from  projet_etu import Module
 

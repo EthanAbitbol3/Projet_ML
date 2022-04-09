@@ -7,18 +7,50 @@
 ##########################################################################################################
 
 # iMPORT 
+from sys import modules
 from linear import Linear
 from MSELoss import MSELoss
 from TanH import Tanh
 from Sigmoide import Sigmoide
 from Sequentiel import Sequentiel
 from Optim import Optim, SGD
+from Softmax import Softmax
+from LogSoftmax import LogSoftmax
+from CELoss import CELoss
+from LogCELoss import LogCELoss
+
 from sklearn.datasets import make_blobs,make_moons,make_regression
 from matplotlib import pyplot as plt
 import numpy as np 
 from mltools import plot_data, plot_frontiere, make_grid, gen_arti
 from sklearn.preprocessing import StandardScaler
 
+# UTILITAIRE #
+
+def load_usps(fn):
+    with open(fn,"r") as f:
+        f.readline()
+        data = [[float(x) for x in l.split()] for l in f if len(l.split())>2]
+    tmp=np.array(data)
+    return tmp[:,1:],tmp[:,0].astype(int)
+
+def get_usps(l,datax,datay):
+    if type(l)!=list:
+        resx = datax[datay==l,:]
+        resy = datay[datay==l]
+        return resx,resy
+    tmp =   list(zip(*[get_usps(i,datax,datay) for i in l]))
+    tmpx,tmpy = np.vstack(tmp[0]),np.hstack(tmp[1])
+    return tmpx,tmpy
+
+def show_usps(data):
+    plt.imshow(data.reshape((16,16)),interpolation="nearest",cmap="gray")
+
+def OneHotEncoding(y):
+    onehot = np.zeros((y.size, y.max() + 1))
+    onehot[np.arange(y.size), y] = 1
+    return onehot
+    
 ##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################
@@ -37,10 +69,11 @@ def neural_network_lineaire(X_train, y_train, nombre_neurone , n_iter = 100,lear
 
         # retro propagation du gradient de la loss par rapport aux parametres et aux entrees
         forward_loss = loss.forward(y_train,y_hat)
+        print('Loss :',forward_loss.sum())
+        train_loss.append(forward_loss.sum()) # erreur
+
         backward_loss = loss.backward(y_train,y_hat)
         modele.backward_update_gradient(X_train,backward_loss)
-
-        train_loss.append(forward_loss.sum()) # erreur
 
         # mise a jour  de la matrice de poids 
         modele.update_parameters(learning_rate)
@@ -76,13 +109,15 @@ def affichage(X,y,modele,train_loss):
     plt.show()
     return None
 
+"""
 # Génération des points
-# nombre_dim_y = 2
-# X, y = make_regression(n_samples=100, n_features=1,bias=0.5,noise=10,n_targets=nombre_dim_y, random_state=0)
-# if y.ndim == 1 : 
-#     y = y.reshape((-1,1))
-# modele, train_loss = neural_network_lineaire(X,y,nombre_neurone= y.shape[1])
-# affichage(X,y,modele,train_loss)
+nombre_dim_y = 2
+X, y = make_regression(n_samples=100, n_features=1,bias=0.5,noise=10,n_targets=nombre_dim_y, random_state=0)
+if y.ndim == 1 : 
+    y = y.reshape((-1,1))
+modele, train_loss = neural_network_lineaire(X,y,nombre_neurone= y.shape[1])
+affichage(X,y,modele,train_loss)
+"""
 
 ##########################################################################################################
 ##########################################################################################################
@@ -91,8 +126,8 @@ def affichage(X,y,modele,train_loss):
 # TEST PARTIE 2: NON LINEAIRE MODULE
 
 class neural_network_non_lineaire:
-    def __init__(self, list_error):
-        self.list_error = list_error
+    def __init__(self):
+        self.list_error = []
 
     def fit(self,X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
         if biais == True:
@@ -106,8 +141,6 @@ class neural_network_non_lineaire:
         self.linear_2 = Linear(nombre_neurone, y.shape[1])
         self.sigmoide = Sigmoide()
 
-        self.list_errors = []
-
         for _ in range(n_iter):
             
             # phase forward
@@ -116,8 +149,8 @@ class neural_network_non_lineaire:
             res3 = self.linear_2.forward(res2)
             res4 = self.sigmoide.forward(res3)
 
-            self.list_errors.append(np.sum(self.mse.forward(y, res4))) # loss
-
+            self.list_error.append(np.sum(self.mse.forward(y, res4))) # loss
+            print('Loss :',np.sum(self.mse.forward(y, res4)))
             #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
             last_delta = self.mse.backward(y, res4)
 
@@ -145,38 +178,29 @@ class neural_network_non_lineaire:
         res3 = self.linear_2.forward(res2)
         res4 = self.sigmoide.forward(res3)
 
-        return np.argmax(res4, axis = 1) 
+        return np.where(res4>=0.5,1,0) 
 
 """
 # generations de points 
-X, y = gen_arti(data_type=1, epsilon=0.01) # 4 gaussiennes
-
-# preprocessing
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
-# classification sur 0 et 1
-y = np.array([ 0 if d == -1 else 1 for d in y ])
-onehot = np.zeros((y.size, 2))
-onehot[np.arange(y.size), y ] = 1
-y = onehot
-
-nombre_neurone = 5
-neural_network_non_lineaire = neural_network_non_lineaire([])
-neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.01)
-y = np.argmax(y,axis=1)
+np.random.seed(1)
+X, y = gen_arti(data_type=1, epsilon=0.001) # 4 gaussiennes
+if y.ndim == 1 : 
+    y = y.reshape((-1,1))
+nombre_neurone = 4
+neural_network_non_lineaire = neural_network_non_lineaire()
+neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=25000,learning_rate=0.01)
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
-plot_frontiere(X,lambda x : neural_network_non_lineaire.predict(x),step=100)
-plot_data(X,y.reshape(1,-1)[0])
+plot_frontiere(X,neural_network_non_lineaire.predict)
+plot_data(X,y)
 plt.title(f"neural network non lineaire avec {nombre_neurone} neurones")
 plt.show()
 
 # affichage de la courbe d'errreur
 plt.figure()
 plt.title('erreur en fonction de literation')
-plt.plot(neural_network_non_lineaire.list_errors, label='loss')
+plt.plot(neural_network_non_lineaire.list_error, label='loss')
 plt.legend()
 plt.xlabel('itérations')
 plt.ylabel('erreur')
@@ -289,3 +313,58 @@ plt.xlabel('itérations')
 plt.ylabel('erreur')
 plt.show()
 """
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+"""
+# TEST PARTIE 4
+# softmax et log softmax
+
+
+def test_multiclass():
+    # Load Data From USPS , directement pris depuis TME4
+    uspsdatatrain = "../data/USPS_train.txt"
+    uspsdatatest = "../data/USPS_test.txt"
+    alltrainx, alltrainy = load_usps(uspsdatatrain)
+    alltestx, alltesty = load_usps(uspsdatatest)
+
+    # taille couche
+    input = len(alltrainx[0])
+    output = len(np.unique(alltesty))
+    alltrainy_oneHot = OneHotEncoding(alltrainy)
+
+    # Hyperparameters
+    maxIter = 200
+    eps = 1e-3
+    batch_size = 100
+
+    linear1 = Linear(input, 128)
+    activation1 = Tanh()
+    linear2 = Linear(128, 64)
+    activation2 = Tanh()
+    linear3 = Linear(64, output)
+    activation3 = Softmax()
+    loss = CELoss()
+
+    # Optimization
+    modules =[linear1, activation1, linear2, activation2, linear3, activation3]
+    model = Sequentiel(modules, loss)
+    optimizer = SGD(model, loss, alltrainx, alltrainy_oneHot)
+    optimizer.update()
+
+    # Predection
+    predict = model.forward(alltrainx)
+    predict = np.argmax(predict, axis=1)
+
+    # Confusion Matrix
+    # confusion = confusion_matrix(predict, alltrainy)
+    # print(np.sum(np.where(predict == alltrainy, 1, 0)) / len(predict))
+    # plt.imshow(confusion)
+
+test_multiclass()
+"""
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+
+# TEST PARTIE 5
