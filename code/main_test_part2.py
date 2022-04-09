@@ -2,8 +2,6 @@ from linear import Linear
 from MSELoss import MSELoss
 from TanH import Tanh
 from Sigmoide import Sigmoide
-from Sequentiel import Sequentiel
-from Optim import Optim, SGD
 from sklearn.datasets import make_blobs,make_moons,make_regression
 from matplotlib import pyplot as plt
 import numpy as np 
@@ -15,7 +13,7 @@ class neural_network_non_lineaire:
     def __init__(self):
         self.list_error = []
 
-    def fit(self,X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
+    def fit(self,X, y, nombre_neurone, n_iter = 2 , learning_rate = 0.001, biais = True):
         if biais == True:
             bias = np.ones((len(X), 1))
             X = np.hstack((bias, X))
@@ -36,7 +34,7 @@ class neural_network_non_lineaire:
             res4 = self.sigmoide.forward(res3)
 
             self.list_error.append(np.sum(self.mse.forward(y, res4))) # loss
-            print('Loss :',np.sum(self.mse.forward(y, res4)))
+            # print('Loss :',np.sum(self.mse.forward(y, res4)))
             #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
             last_delta = self.mse.backward(y, res4)
 
@@ -55,16 +53,17 @@ class neural_network_non_lineaire:
             self.linear_2.zero_grad()
 
     def predict(self,xtest,biais = True):
+        print("Xtest 5 shape ",xtest.shape)
         if biais == True:
             bias = np.ones((len(xtest), 1))
             xtest = np.hstack((bias, xtest))
-        
+        print("Xtest edfze shape ",xtest.shape)
         res1 = self.linear_1.forward(xtest)
         res2 = self.tanh.forward(res1)
         res3 = self.linear_2.forward(res2)
         res4 = self.sigmoide.forward(res3)
-
-        return np.where(res4>=0.5,1,0) 
+        print("y_hat : ",res4.shape)
+        return np.where(res4>=0.5,1,0)
 
 # generations de points 
 np.random.seed(1)
@@ -73,7 +72,9 @@ if y.ndim == 1 :
     y = y.reshape((-1,1))
 nombre_neurone = 4
 neural_network_non_lineaire = neural_network_non_lineaire()
-neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=25000,learning_rate=0.01)
+neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.01)
+
+print("X shape :",X.shape)
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()

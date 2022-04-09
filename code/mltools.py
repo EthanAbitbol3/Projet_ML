@@ -27,7 +27,10 @@ def plot_frontiere(data,f,step=20):
     :param step: pas de la grille
     :return:
     """
+    print("passage")
     grid,x,y=make_grid(data=data,step=step)
+    print("grid shape : ",grid.shape)
+    print("f shape : ",f(grid).shape)
     plt.contourf(x,y,f(grid).reshape(x.shape),colors=('gray','blue'),levels=[-1,0,1])
 
 def make_grid(data=None,xmin=-5,xmax=5,ymin=-5,ymax=5,step=20):
@@ -42,6 +45,8 @@ def make_grid(data=None,xmin=-5,xmax=5,ymin=-5,ymax=5,step=20):
     """
     if data is not None:
         xmax, xmin, ymax, ymin = np.max(data[:,0]),  np.min(data[:,0]), np.max(data[:,1]), np.min(data[:,1])
+    
+    print(xmax, xmin, ymax, ymin)
     x, y =np.meshgrid(np.arange(xmin,xmax,(xmax-xmin)*1./step), np.arange(ymin,ymax,(ymax-ymin)*1./step))
     grid=np.c_[x.ravel(),y.ravel()]
     return grid, x, y
