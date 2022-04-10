@@ -189,7 +189,7 @@ if y.ndim == 1 :
     y = y.reshape((-1,1))
 nombre_neurone = 4
 neural_network_non_lineaire = neural_network_non_lineaire()
-neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=25000,learning_rate=0.01)
+neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=200,learning_rate=0.01)
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
