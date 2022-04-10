@@ -5,9 +5,16 @@ DUFOURMANTELLE JEREMY
 """
 import numpy as np
 from projet_etu import Module 
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Sequentiel(Module) :
 
+<<<<<<< HEAD
+class Sequentiel(Module) :
+
+=======
+>>>>>>> af604571a72bded991c3dc924a2ffceec5de8eb9
     def __init__(self,modules):
         super().__init__()
         self.modules = modules
@@ -69,3 +76,52 @@ class Sequentiel(Module) :
             xtest = np.hstack((bias, xtest))
         self.initialisation_parameters()
         return np.where(self.forward(xtest)>=0.5,1,0)
+<<<<<<< HEAD
+=======
+"""
+TEST
+"""
+
+# # generations de points 
+# np.random.seed(1)
+# X, y = gen_arti(data_type=1, epsilon=0.001) # 4 gaussiennes
+# bias = np.ones((len(X), 1))
+# X = np.hstack((bias, X))
+
+# if y.ndim == 1 : 
+#     y = y.reshape((-1,1))
+
+# nombre_neurone = 4
+
+# linear_1 = Linear(X.shape[1], nombre_neurone)
+# tanh = Tanh()
+# linear_2 = Linear(nombre_neurone, y.shape[1])
+# sigmoide = Sigmoide()
+# loss = MSELoss()
+
+# modules = [linear_1,tanh,linear_2,sigmoide]
+# nn = Sequentiel(modules)
+# liste_error =[]
+
+# for _ in range(200):
+
+#     y_hat = nn.forward(X)
+#     print('Loss 1 :',loss.forward(y, y_hat).sum())
+#     liste_error.append(loss.forward(y, y_hat).sum())
+#     last_delta = loss.backward(y, y_hat)
+
+#     delta = nn.backward_delta(X, last_delta)
+#     nn.backward_update_gradient(X)
+#     nn.update_parameters()
+#     nn.zero_grad()
+#     nn.initialisation_parameters()
+
+# # affichage de la courbe d'errreur
+# plt.figure()
+# plt.title('erreur en fonction de literation')
+# plt.plot(liste_error, label='loss')
+# plt.legend()
+# plt.xlabel('itérations')
+# plt.ylabel('erreur')
+# plt.show()
+>>>>>>> af604571a72bded991c3dc924a2ffceec5de8eb9

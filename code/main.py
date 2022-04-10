@@ -24,6 +24,7 @@ from matplotlib import pyplot as plt
 import numpy as np 
 from mltools import plot_data, plot_frontiere, make_grid, gen_arti
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
 
 # UTILITAIRE #
 
@@ -188,7 +189,7 @@ if y.ndim == 1 :
     y = y.reshape((-1,1))
 nombre_neurone = 4
 neural_network_non_lineaire = neural_network_non_lineaire()
-neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=25000,learning_rate=0.01)
+neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=200,learning_rate=0.01)
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
@@ -316,52 +317,189 @@ plt.show()
 ##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################
-"""
+
 # TEST PARTIE 4
 # softmax et log softmax
 
+class soft():
+    def __init__(self):
+        self.list_error = []
 
-def test_multiclass():
-    # Load Data From USPS , directement pris depuis TME4
-    uspsdatatrain = "../data/USPS_train.txt"
-    uspsdatatest = "../data/USPS_test.txt"
-    alltrainx, alltrainy = load_usps(uspsdatatrain)
-    alltestx, alltesty = load_usps(uspsdatatest)
+    def fit(self,X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
+        if biais == True:
+            bias = np.ones((len(X), 1))
+            X = np.hstack((bias, X))
 
-    # taille couche
-    input = len(alltrainx[0])
-    output = len(np.unique(alltesty))
-    alltrainy_oneHot = OneHotEncoding(alltrainy)
+        # Initialisation des modules
+        self.ce = LogCELoss()
+        self.linear_1 = Linear(X.shape[1], nombre_neurone)
+        self.tanh = Tanh()
+        self.linear_2 = Linear(nombre_neurone, y.shape[1])
+        self.softmax = Softmax()
 
-    # Hyperparameters
-    maxIter = 200
-    eps = 1e-3
-    batch_size = 100
+        for _ in range(n_iter):
 
-    linear1 = Linear(input, 128)
-    activation1 = Tanh()
-    linear2 = Linear(128, 64)
-    activation2 = Tanh()
-    linear3 = Linear(64, output)
-    activation3 = Softmax()
-    loss = CELoss()
+            # phase forward
+            res1 = self.linear_1.forward(X)
+            res2 = self.tanh.forward(res1)
+            res3 = self.linear_2.forward(res2)
+            res4 = self.softmax.forward(res3)
 
-    # Optimization
-    modules =[linear1, activation1, linear2, activation2, linear3, activation3]
-    model = Sequentiel(modules, loss)
-    optimizer = SGD(model, loss, alltrainx, alltrainy_oneHot)
-    optimizer.update()
+            self.list_error.append(np.mean(self.ce.forward(y, res4))) # loss
+            print('Loss :',np.mean(self.ce.forward(y, res4)))
+            #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
+            last_delta = self.ce.backward(y, res4)
 
-    # Predection
-    predict = model.forward(alltrainx)
-    predict = np.argmax(predict, axis=1)
+            delta_sig = self.softmax.backward_delta(res3, last_delta)
+            delta_lin = self.linear_2.backward_delta(res2, delta_sig)
+            delta_tan = self.tanh.backward_delta(res1, delta_lin)
 
-    # Confusion Matrix
-    # confusion = confusion_matrix(predict, alltrainy)
-    # print(np.sum(np.where(predict == alltrainy, 1, 0)) / len(predict))
-    # plt.imshow(confusion)
+            self.linear_1.backward_update_gradient(X, delta_tan)
+            self.linear_2.backward_update_gradient(res2, delta_sig)
 
-test_multiclass()
+            # mise a jour  de la matrice de poids
+            self.linear_1.update_parameters(learning_rate)
+            self.linear_2.update_parameters(learning_rate)
+
+            self.linear_1.zero_grad()
+            self.linear_2.zero_grad()
+
+    def predict(self,xtest,biais = True):
+        if biais == True:
+            bias = np.ones((len(xtest), 1))
+            xtest = np.hstack((bias, xtest))
+        
+        res1 = self.linear_1.forward(xtest)
+        res2 = self.tanh.forward(res1)
+        res3 = self.linear_2.forward(res2)
+        res4 = self.softmax.forward(res3)
+
+        # return np.where(res4>=0.5,1,0)
+        return np.argmax(res4, axis=1)
+
+"""
+uspsdatatrain = "../data/USPS_train.txt"
+uspsdatatest = "../data/USPS_test.txt"
+alltrainx,alltrainy = load_usps(uspsdatatrain)
+alltestx,alltesty = load_usps(uspsdatatest)
+
+alltrainy = OneHotEncoding(alltrainy)
+
+# generations de points 
+np.random.seed(1)
+
+if alltrainy.ndim == 1 : 
+    alltrainy = alltrainy.reshape((-1,1))
+
+nombre_neurone = 10
+soft = soft()
+soft.fit(alltrainx,alltrainy,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.0001)
+
+# affichage de la courbe d'errreur
+plt.figure()
+plt.title('erreur en fonction de literation')
+plt.plot(soft.list_error, label='loss')
+plt.legend()
+plt.xlabel('itérations')
+plt.ylabel('erreur')
+plt.show()
+
+# Test sur les données d'apprentissage
+# ypred = soft.predict(alltestx)
+# print("Score de bonne classification: ", 1 - np.mean( ypred == alltesty ))
+"""
+#################### TEST 2 ############################
+class soft2():
+    def __init__(self):
+        self.list_error = []
+
+    def fit(self,X, y, nombre_neurone, n_iter = 100 , learning_rate = 0.001, biais = True):
+        if biais == True:
+            bias = np.ones((len(X), 1))
+            X = np.hstack((bias, X))
+
+        # Initialisation des modules
+        self.ce = LogCELoss()
+        self.linear_1 = Linear(X.shape[1], nombre_neurone)
+        self.tanh = Tanh()
+        self.linear_2 = Linear(nombre_neurone, 5)
+        self.tanh2 = Tanh()
+        self.linear_3 = Linear(5, y.shape[1])
+        self.softmax = Softmax()
+
+        for _ in range(n_iter):
+
+            # phase forward
+            res1 = self.linear_1.forward(X)
+            res2 = self.tanh.forward(res1)
+            res3 = self.linear_2.forward(res2)
+            res4 = self.tanh2.forward(res3)
+            res5 = self.linear_3.forward(res4)
+            res6 = self.softmax.forward(res5)
+
+            self.list_error.append(np.mean(self.ce.forward(y, res6))) # loss
+            print('Loss :',np.mean(self.ce.forward(y, res6)))
+            #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
+            last_delta = self.ce.backward(y, res6)
+
+            delta_soft = self.softmax.backward_delta(res5, last_delta)
+            delta_lin3 = self.linear_3.backward_delta(res4, delta_soft)
+            delta_tan2 = self.tanh.backward_delta(res3, delta_lin3)
+            delta_lin2 = self.linear_2.backward_delta(res2, delta_tan2)
+            delta_tan = self.tanh.backward_delta(res1, delta_lin2)
+            delta_lin1 = self.linear_1.backward_delta(X, delta_tan)
+
+            self.linear_1.backward_update_gradient(X, delta_tan)
+            self.linear_2.backward_update_gradient(res2, delta_tan2)
+            self.linear_3.backward_update_gradient(res4, delta_soft)
+
+            # mise a jour  de la matrice de poids
+            self.linear_1.update_parameters(learning_rate)
+            self.linear_2.update_parameters(learning_rate)
+            self.linear_3.update_parameters(learning_rate)
+
+            self.linear_1.zero_grad()
+            self.linear_2.zero_grad()
+            self.linear_3.zero_grad()
+
+    def predict(self,xtest,biais = True):
+        if biais == True:
+            bias = np.ones((len(xtest), 1))
+            xtest = np.hstack((bias, xtest))
+        
+        res1 = self.linear_1.forward(xtest)
+        res2 = self.tanh.forward(res1)
+        res3 = self.linear_2.forward(res2)
+        res4 = self.tanh2.forward(res3)
+        res5 = self.linear_3.forward(res4)
+        res6 = self.softmax.forward(res5)
+
+        # return np.where(res4>=0.5,1,0)
+        return np.argmax(res6, axis=1)
+"""
+uspsdatatrain = "../data/USPS_train.txt"
+uspsdatatest = "../data/USPS_test.txt"
+alltrainx, alltrainy = load_usps(uspsdatatrain)
+alltestx, alltesty = load_usps(uspsdatatest)
+
+# taille couche
+alltrainy_oneHot = OneHotEncoding(alltrainy)
+
+if alltrainy.ndim == 1 : 
+    alltrainy = alltrainy.reshape((-1,1))
+
+nombre_neurone = 10
+soft2 = soft2()
+soft2.fit(alltrainx,alltrainy_oneHot,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.001)
+
+# affichage de la courbe d'errreur
+plt.figure()
+plt.title('erreur en fonction de literation')
+plt.plot(soft2.list_error, label='loss')
+plt.legend()
+plt.xlabel('itérations')
+plt.ylabel('erreur')
+plt.show()
 """
 ##########################################################################################################
 ##########################################################################################################
