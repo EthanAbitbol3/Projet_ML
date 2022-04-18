@@ -2,11 +2,6 @@ from linear import Linear
 from MSELoss import MSELoss
 from TanH import Tanh
 from Sigmoide import Sigmoide
-<<<<<<< HEAD
-from sklearn.datasets import make_blobs,make_moons,make_regression
-=======
-
->>>>>>> af604571a72bded991c3dc924a2ffceec5de8eb9
 from matplotlib import pyplot as plt
 import numpy as np 
 from mltools import plot_data, plot_frontiere, make_grid, gen_arti
@@ -39,7 +34,7 @@ class neural_network_non_lineaire:
             res4 = self.sigmoide.forward(res3)
 
             self.list_error.append(np.sum(self.mse.forward(y, res4))) # loss
-            # print('Loss :',np.sum(self.mse.forward(y, res4)))
+            print('Loss :',np.sum(self.mse.forward(y, res4)))
             #  retro propagation du gradient de la loss par rapport aux parametres et aux entrees
             last_delta = self.mse.backward(y, res4)
 
@@ -73,18 +68,12 @@ class neural_network_non_lineaire:
 
 # generations de points 
 np.random.seed(1)
-X, y = gen_arti(data_type=1, epsilon=0.001) # 4 gaussiennes
+X, y = gen_arti(data_type=0, epsilon=0.001) # 4 gaussiennes
 if y.ndim == 1 : 
     y = y.reshape((-1,1))
-nombre_neurone = 4
+nombre_neurone = 10
 neural_network_non_lineaire = neural_network_non_lineaire()
-<<<<<<< HEAD
-neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=100,learning_rate=0.01)
-
-print("X shape :",X.shape)
-=======
 neural_network_non_lineaire.fit(X,y,nombre_neurone=nombre_neurone,n_iter=200,learning_rate=0.01)
->>>>>>> af604571a72bded991c3dc924a2ffceec5de8eb9
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()

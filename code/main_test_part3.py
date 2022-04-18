@@ -33,8 +33,8 @@ for i in range(nbIter):
     nn.update_parameters()
     nn.zero_grad()
     nn.initialisation_parameters()
-    list_loss.append(np.sum(loss.forward(y, y_hat)))
-    print('Loss :',np.sum(loss.forward(y, y_hat)))
+    list_loss.append(np.mean(loss.forward(y, y_hat)))
+    print('Loss :',np.mean(loss.forward(y, y_hat)))
 
 # affichage de la frontiere de decision ainsi que des donnees
 plt.figure()
@@ -43,6 +43,9 @@ plot_data(X,y)
 plt.title(f"Frontiere de decision du module Sequence avec {nombre_neurone} neurones")
 plt.show()
 
+print("MSE : ",np.mean(loss.forward(y, y_hat)))
+print("Taux de bonne classification : ",((nn.predict(X) == np.where(y>=0.5,1,0)).sum()/len(np.where(y>=0.5,1,0)))*100,"%")
+# print(np.where(y>=0.5,1,0))
 # affichage erreur 
 plt.figure()
 plt.xlabel("nombre d'iteration")

@@ -26,7 +26,7 @@ class Optim():
         self.net.backward_update_gradient(batch_x,delta)
 
         # Mise a jour des parametres de chaque couche du réseau
-        self.net.update_parameters()
+        self.net.update_parameters(gradient_step=1e-3)
 
         # Reinitialisation des gradients de chaque couche du réseau
         self.net.zero_grad()
