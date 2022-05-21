@@ -12,12 +12,13 @@ class LogSoftmax(Module):
 
     def forward(self, X):
         """Calcule la passe forward"""
+        print("sss : ",X.shape)
         logsum_exp = np.log(np.sum(np.exp(X), axis=1))
         return (X - logsum_exp)
 
     def update_parameters(self, gradient_step=1e-3):
         """Calcule la mise a jour des parametres selon le gradient calcule et le pas de gradient_step"""
-        pass 
+        pass
 
     def backward_update_gradient(self, input, delta):
         """Met a jour la valeur du gradient"""

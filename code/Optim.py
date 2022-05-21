@@ -15,7 +15,7 @@ class Optim():
 
         # Calcul de la passe avant forward du réseau
         y_hat = self.net.forward(batch_x)
-
+        
         # Calcul de la dérivé de la loss par rapport au y
         last_delta = self.loss.backward(batch_y, y_hat)
         

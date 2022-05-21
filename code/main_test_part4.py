@@ -14,17 +14,21 @@ from Optim import SGD
 import time
 import random
 from tqdm import tqdm
+from LogSoftmax import *
+from Softmax import *
+from CELoss import *
+from LogCELoss import *
+
+class DataGenerator : 
+    
+    def classif_data(self,n_clusters_per_class=1,n_informative=2,n_samples=100,n_classes=2) : 
+        return make_classification(n_classes = n_classes,n_features=2, n_samples=n_samples,n_redundant=0, n_informative=n_informative, n_clusters_per_class=n_clusters_per_class)
 
 def print_ok():
     print(colored('OK','green'))
 
 def print_ko():
     print(colored('KO','red'))
-
-class DataGenerator : 
-    
-    def classif_data(self,n_clusters_per_class=1,n_informative=1,n_samples=100) : 
-        return make_classification(n_features=2, n_samples=n_samples,n_redundant=0, n_informative=n_informative, n_clusters_per_class=n_clusters_per_class)
 
 class TestNeuralNetwork : 
 
@@ -53,6 +57,7 @@ class TestNeuralNetwork :
     def stochasticGradientDescent(self,eps = 1e-3, max_iter = 1000):
         print("-- Descente de gradient stochastique sur",str(self.X.shape[0]),"exemples --")
         optim = Optim(self.network , self.loss , eps)
+        print("test 1 : ",self.X.shape)
         X,y = self.X,self.y
         time_start = time.time()
         for _ in tqdm(range(max_iter)) :
@@ -74,8 +79,10 @@ class TestNeuralNetwork :
     """
     Affichage
     """
-    def printResult(self): 
+    def printResult(self):
+        print("test 2 : ",self.X.shape) 
         y_hat = self.network.forward(self.X)
+        print(y_hat.shape)
         print("Moyenne des erreurs : ",np.mean(self.loss.forward(self.y, y_hat)))
         print("Taux de bonne classification : ",((self.network.predict(self.X,biais = False) == np.where(self.y>=0.5,1,0)).sum()/len(self.y))*100,"%")
         print("Durée d'apprentissage : ",self.time_learning,"ms")
@@ -89,41 +96,46 @@ class TestNeuralNetwork :
         plt.title(f"neural network non lineaire avec {nombre_neurone} neurones")
         plt.show()
         """
-        
-
-#################################################################################
-###############################   TEST   ########################################
-#################################################################################
 
 # TEST 1 
 dg = DataGenerator() # generateur de données de classification
-X,y = dg.classif_data(n_samples=1000) # génération des données
+X,y = dg.classif_data(n_samples=1000,n_classes=3) # génération des données
 if y.ndim == 1 : 
     y = y.reshape((-1,1))
+
+def onehot(y):
+    new_y = []
+    classes = np.unique(y)
+    for _y in y:
+        classe = np.zeros(len(classes))
+        classe[_y] = 1
+        new_y.append(classe)
+    return np.array(new_y)
+
+y = onehot(y)
 
 # Affichage des données
 plt.figure()
 plt.scatter(X[:,0],X[:,1],c=y)
 plt.show()
 
-
 # MODELE 1 
 eps = 1e-5
 nombre_neurone = 4
-modules = [Linear(X.shape[1],nombre_neurone),Tanh(),Linear(nombre_neurone,y.shape[1]),Sigmoide()]
+modules = [Linear(X.shape[1],nombre_neurone),Tanh(),Linear(nombre_neurone,y.shape[1]),LogSoftmax()]
+loss = LogCELoss()
+print(modules)
+
+network = Sequentiel(modules)
+tnn = TestNeuralNetwork(X,y,network,loss) # Création du test
+tnn.batchGradientDescent() # descente de gradient en batch
+tnn.printResult() # affichage dans le terminal des résultats
+
+"""
 loss = MSELoss()
 network = Sequentiel(modules)
 tnn = TestNeuralNetwork(X,y,network,loss) # Création du test
 tnn.stochasticGradientDescent() # descente de gradient stocastique
 tnn.printResult() # affichage dans le terminal des résultats
 tnn.plotResult() # affichage de la frontiere de décision
-
-# MODELE 2
-nombre_neurone = 4
-modules = [Linear(X.shape[1],nombre_neurone),Tanh(),Linear(nombre_neurone,y.shape[1]),Sigmoide()]
-loss = MSELoss()
-network = Sequentiel(modules)
-tnn = TestNeuralNetwork(X,y,network,loss) # Création du test
-tnn.batchGradientDescent() # descente de gradient en batch
-tnn.printResult() # affichage dans le terminal des résultats
-tnn.plotResult() # affichage de la frontiere de décision
+"""
